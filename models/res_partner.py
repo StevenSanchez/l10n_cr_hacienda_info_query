@@ -130,6 +130,7 @@ class ResPartner(models.Model):
                             actividad_activa.get("codigo") or ""
                         )
 
+
                     # ------------------------------------------------------------
                     # Lógica original del módulo: asignar activity_id si existe
                     # ------------------------------------------------------------
