@@ -168,3 +168,4 @@ class ResPartner(models.Model):
             except Exception as e:
                 _logger.error("Error consultando Hacienda: %s", e)
                 company_id.ultima_respuesta = "Error: %s" % e
+
