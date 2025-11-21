@@ -14,7 +14,7 @@ class ResPartner(models.Model):
     _inherit = 'res.partner'
 
     # -------------------------------
-    # NUEVOS CAMPOS
+    # CAMPOS HACIENDA
     # -------------------------------
     hacienda_activity_code = fields.Char(
         string='Actividad económica (código Hacienda)',
@@ -28,7 +28,7 @@ class ResPartner(models.Model):
 
     hacienda_status = fields.Char(
         string='Estado en Hacienda',
-        help='Estado textual devuelto por Hacienda (Inscrito, Inscrito de Oficio, Inactivo).'
+        help='Estado textual devuelto por Hacienda (Inscrito, Inscrito de Oficio, Inactivo, etc.).'
     )
 
     # -------------------------------
@@ -70,7 +70,10 @@ class ResPartner(models.Model):
         if get_yo and url_base_yo and usuario_yo and token_yo:
             try:
                 endpoint = url_base_yo + "identificacion=" + cedula
-                headers = {"access-user": usuario_yo, "access-token": token_yo}
+                headers = {
+                    "access-user": usuario_yo,
+                    "access-token": token_yo,
+                }
 
                 r = requests.get(endpoint, headers=headers, timeout=10)
                 company_id.ultima_respuesta_yo_contribuyo = f"{r.status_code} - {r.text}"
@@ -79,7 +82,7 @@ class ResPartner(models.Model):
                     data = json.loads(r.text)
                     correos = data.get("Resultado", {}).get("Correos", [])
                     if correos:
-                        self.email = ", ".join([c.get("Correo", "") for c in correos])
+                        self.email = ", ".join(c.get("Correo", "") for c in correos)
 
             except Exception as e:
                 _logger.error("Error Yo Contribuyo: %s", e)
@@ -98,38 +101,40 @@ class ResPartner(models.Model):
                 if r.status_code in (200, 202) and r.content:
                     contenido = json.loads(r.content.decode("utf-8"))
 
-                    # ------------------------------------------------
+                    # --------------------------
                     # NOMBRE
-                    # ------------------------------------------------
+                    # --------------------------
                     if contenido.get("nombre"):
                         self.name = contenido.get("nombre")
 
-                    # ------------------------------------------------
+                    # --------------------------
                     # TIPO DE IDENTIFICACIÓN
-                    # ------------------------------------------------
+                    # --------------------------
                     if "identification_id" in self._fields:
                         tipo = contenido.get("tipoIdentificacion")
                         if tipo:
                             ident_type = self.env["identification.type"].search(
-                                [("code", "=", tipo)], limit=1
+                                [("code", "=", tipo)],
+                                limit=1
                             )
                             self.identification_id = ident_type.id
 
-                    # ------------------------------------------------
-                    # NUEVO: ESTADO EN HACIENDA
-                    # ------------------------------------------------
+                    # --------------------------
+                    # ESTADO / INSCRIPCIÓN EN HACIENDA
+                    # --------------------------
                     situacion = contenido.get("situacion") or {}
                     estado = situacion.get("estado") or ""
                     self.hacienda_status = estado
+                    # Puedes ajustar esta condición si Hacienda usa otros textos
                     self.hacienda_inscribed = estado in (
                         "Inscrito",
                         "Inscrito de Oficio",
                         "Activo",
                     )
 
-                    # ------------------------------------------------
-                    # NUEVO: ACTIVIDAD ECONÓMICA
-                    # ------------------------------------------------
+                    # --------------------------
+                    # ACTIVIDAD ECONÓMICA
+                    # --------------------------
                     actividades = contenido.get("actividades") or []
                     self.hacienda_activity_code = False
 
@@ -145,9 +150,9 @@ class ResPartner(models.Model):
                             actividad_activa.get("codigo") or ""
                         )
 
-                    # ------------------------------------------------
-                    # LÓGICA ORIGINAL PARA activity_id
-                    # ------------------------------------------------
+                    # --------------------------
+                    # LÓGICA ORIGINAL activity_id
+                    # --------------------------
                     if actividades and "activity_id" in self._fields:
                         for act in actividades:
                             if act.get("estado") == "A":
