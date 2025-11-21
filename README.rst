@@ -18,3 +18,7 @@ Autores:
 * Odoo CR
 * Factura Sempai
 * FSS Solutions
+
+Modificación:
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+* Steven Sánchez
